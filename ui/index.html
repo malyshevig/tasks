@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+    
+    <!-- Подключение React -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .task-table {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 25px;
+        }
+        
+        .filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .filters select, .filters input {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            background-color: white;
+        }
+        
+        .filters input {
+            flex-grow: 1;
+            min-width: 250px;
+        }
+        
+        .refresh-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        
+        .refresh-btn:hover {
+            background: #2980b9;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        
+        th, td {
+            padding: 12px 10px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        th {
+            background-color: #f1f8ff;
+            color: #2c3e50;
+            font-weight: 600;
+            cursor: pointer;
+            position: relative;
+            white-space: nowrap;
+        }
+        
+        th:hover {
+            background-color: #e3f2fd;
+        }
+        
+        tbody tr:hover {
+            background-color: #f9f9f9;
+        }
+        
+        .loading, .error, .no-data {
+            text-align: center;
+            padding: 30px;
+            font-size: 18px;
+        }
+        
+        .loading {
+            color: #3498db;
+        }
+        
+        .error {
+            color: #e74c3c;
+        }
+        
+        .update-info {
+            font-size: 14px;
+            color: #7f8c8d;
+            text-align: right;
+            padding: 5px 10px;
+        }
+        
+        .status-open {
+            color: #e67e22;
+            font-weight: 500;
+        }
+        
+        .status-in_progress {
+            color: #3498db;
+            font-weight: 500;
+        }
+        
+        .status-done {
+            color: #27ae60;
+            font-weight: 500;
+        }
+        
+        .null-value {
+            color: #95a5a6;
+            font-style: italic;
+        }
+        
+        @media (max-width: 992px) {
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .filters {
+                flex-direction: column;
+            }
+            
+            .filters input, .filters select {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect, useCallback } = React;
+
+        const TaskTable = () => {
+            // Состояния компонента
+            const [tasks, setTasks] = useState([]);
+            const [filteredTasks, setFilteredTasks] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
+            
+            // Состояния для сортировки
+            const [sortField, setSortField] = useState('id');
+            const [sortDirection, setSortDirection] = useState('asc');
+            
+            // Состояния для фильтрации
+            const [filter, setFilter] = useState('');
+            const [filterField, setFilterField] = useState('name');
+
+            // Маппинг статусов
+            const statusMapping = {
+                'open': { text: 'Открыта', className: 'status-open' },
+                'in_progress': { text: 'В процессе', className: 'status-in_progress' },
+                'done': { text: 'Завершена', className: 'status-done' }
+            };
+
+            // Функция загрузки данных
+            const fetchData = useCallback(async () => {
+                try {
+                    const response = await fetch('http://localhost:8080/api/tasks');
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    setTasks(data);
+                    applyFiltersAndSorting(data, filter, filterField, sortField, sortDirection);
+                } catch (err) {
+                    setError(err.message);
+                } finally {
+                    setLoading(false);
+                }
+            }, [filter, filterField, sortField, sortDirection]);
+
+            // Применение фильтров и сортировки
+            const applyFiltersAndSorting = (data, filterValue, field, sortField, sortDirection) => {
+                // Фильтрация
+                let filtered = data;
+                if (filterValue !== '') {
+                    filtered = data.filter(item => {
+                        let value = item[field];
+                        
+                        // Обработка специальных случаев
+                        if (value === null) {
+                            value = 'null';
+                        } else if (field === 'ts') {
+                            value = new Date(value).toLocaleString();
+                        } else {
+                            value = String(value);
+                        }
+                        
+                        return value.toLowerCase().includes(filterValue.toLowerCase());
+                    });
+                }
+                
+                // Сортировка
+                const sorted = [...filtered].sort((a, b) => {
+                    let valA = a[sortField];
+                    let valB = b[sortField];
+                    
+                    // Обработка специальных полей
+                    if (sortField === 'lines') {
+                        valA = valA === null ? -1 : valA;
+                        valB = valB === null ? -1 : valB;
+                        return sortDirection === 'asc' ? valA - valB : valB - valA;
+                    }
+                    
+                    if (sortField === 'ts') {
+                        valA = new Date(valA).getTime();
+                        valB = new Date(valB).getTime();
+                        return sortDirection === 'asc' ? valA - valB : valB - valA;
+                    }
+                    
+                    if (typeof valA === 'string' && typeof valB === 'string') {
+                        return sortDirection === 'asc' 
+                            ? valA.localeCompare(valB) 
+                            : valB.localeCompare(valA);
+                    }
+                    
+                    return sortDirection === 'asc' 
+                        ? (valA || 0) - (valB || 0) 
+                        : (valB || 0) - (valA || 0);
+                });
+                
+                setFilteredTasks(sorted);
+            };
+
+            // Обработчик сортировки
+            const handleSort = (field) => {
+                const newDirection = sortField === field && sortDirection === 'asc' 
+                    ? 'desc' 
+                    : 'asc';
+                
+                setSortField(field);
+                setSortDirection(newDirection);
+                applyFiltersAndSorting(tasks, filter, filterField, field, newDirection);
+            };
+
+            // Обработчик изменения фильтра
+            const handleFilterChange = (e) => {
+                const value = e.target.value;
+                setFilter(value);
+                applyFiltersAndSorting(tasks, value, filterField, sortField, sortDirection);
+            };
+
+            // Обработчик изменения поля фильтрации
+            const handleFilterFieldChange = (e) => {
+                const field = e.target.value;
+                setFilterField(field);
+                applyFiltersAndSorting(tasks, filter, field, sortField, sortDirection);
+            };
+
+            // Загрузка данных при монтировании и автообновление
+            useEffect(() => {
+                fetchData();
+                
+                // Автообновление каждые 5 секунд
+                const intervalId = setInterval(fetchData, 5000);
+                
+                return () => clearInterval(intervalId);
+            }, [fetchData]);
+
+            // Отображение индикатора сортировки
+            const getSortIndicator = (field) => {
+                if (sortField !== field) return null;
+                return sortDirection === 'asc' ? ' ↑' : ' ↓';
+            };
+
+            // Форматирование даты
+            const formatDate = (dateString) => {
+                const date = new Date(dateString);
+                return date.toLocaleString();
+            };
+
+            if (loading) {
+                return <div className="loading">Загрузка данных...</div>;
+            }
+
+            if (error) {
+                return <div className="error">Ошибка: {error}</div>;
+            }
+
+            return (
+                <div className="task-table">
+                    <h2>Управление задачами</h2>
+                    
+                    {/* Панель фильтрации */}
+                    <div className="filters">
+                        <select 
+                            value={filterField} 
+                            onChange={handleFilterFieldChange}
+                            aria-label="Выберите поле для фильтрации"
+                        >
+                            <option value="name">Имя файла</option>
+                            <option value="status">Статус</option>
+                            <option value="worker_id">Worker ID</option>
+                            <option value="lines">Количество строк</option>
+                            <option value="ts">Дата изменения</option>
+                            <option value="id">ID</option>
+                        </select>
+                        
+                        <input
+                            type="text"
+                            placeholder={`Фильтр по ${filterField}...`}
+                            value={filter}
+                            onChange={handleFilterChange}
+                            aria-label="Поле фильтрации"
+                        />
+                        
+                        <button onClick={() => fetchData()} className="refresh-btn">
+                            Обновить сейчас
+                        </button>
+                    </div>
+
+                    {/* Таблица */}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th onClick={() => handleSort('id')}>
+                                    ID{getSortIndicator('id')}
+                                </th>
+                                <th onClick={() => handleSort('name')}>
+                                    Имя файла{getSortIndicator('name')}
+                                </th>
+                                <th onClick={() => handleSort('lines')}>
+                                    Строк{getSortIndicator('lines')}
+                                </th>
+                                <th onClick={() => handleSort('status')}>
+                                    Статус{getSortIndicator('status')}
+                                </th>
+                                <th onClick={() => handleSort('worker_id')}>
+                                    Worker ID{getSortIndicator('worker_id')}
+                                </th>
+                                <th onClick={() => handleSort('ts')}>
+                                    Дата изменения{getSortIndicator('ts')}
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredTasks.length > 0 ? (
+                                filteredTasks.map(task => (
+                                    <tr key={task.id}>
+                                        <td>{task.id}</td>
+                                        <td>{task.name}</td>
+                                        <td>
+                                            {task.lines === null 
+                                                ? <span className="null-value">—</span> 
+                                                : task.lines}
+                                        </td>
+                                        <td className={statusMapping[task.status]?.className || ''}>
+                                            {statusMapping[task.status]?.text || task.status}
+                                        </td>
+                                        <td>{task.worker_id}</td>
+                                        <td>{formatDate(task.ts)}</td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="6" className="no-data">
+                                        {filter ? 'Задачи не найдены' : 'Нет доступных задач'}
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                    
+                    <div className="update-info">
+                        Данные обновляются автоматически каждые 5 секунд | Всего задач: {filteredTasks.length}
+                    </div>
+                </div>
+            );
+        };
+
+        // Рендеринг приложения
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<TaskTable />);
+    </script>
+</body>
+</html>
