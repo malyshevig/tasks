@@ -1,109 +1,225 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task Manager</title>
-    
-    <!-- Подключение React -->
+    <title>Task Management Dashboard</title>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f8f9fa;
+        * {
             margin: 0;
-            padding: 20px;
-            color: #333;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
-        .task-table {
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
             max-width: 1400px;
             margin: 0 auto;
-            padding: 20px;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         
-        h2 {
+        header {
             text-align: center;
+            padding: 30px 0;
             color: #2c3e50;
-            margin-bottom: 25px;
         }
         
-        .filters {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            align-items: center;
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #3498db, #2c3e50);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
         }
         
-        .filters select, .filters input {
-            padding: 10px 15px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 16px;
+        header p {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        .dashboard {
             background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            margin-bottom: 30px;
         }
         
-        .filters input {
-            flex-grow: 1;
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            align-items: flex-end;
+        }
+        
+        .search-group {
+            flex: 1;
             min-width: 250px;
         }
         
+        .search-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+        
+        .search-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        
+        .search-group input:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        
+        .refresh-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
         .refresh-btn {
-            background: #3498db;
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 600;
             cursor: pointer;
-            font-size: 16px;
-            transition: background 0.3s;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(52, 152, 219, 0.2);
         }
         
         .refresh-btn:hover {
-            background: #2980b9;
+            background: linear-gradient(135deg, #2980b9 0%, #3498db 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(52, 152, 219, 0.3);
         }
         
-        table {
+        .refresh-indicator {
+            display: flex;
+            align-items: center;
+            background-color: #f8f9fa;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            color: #7f8c8d;
+        }
+        
+        .indicator-dot {
+            width: 10px;
+            height: 10px;
+            background-color: #2ecc71;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+        
+        .task-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 15px;
-            font-size: 14px;
+            margin-top: 20px;
         }
         
-        th, td {
-            padding: 12px 10px;
-            text-align: left;
-            border-bottom: 1px solid #eee;
-        }
-        
-        th {
-            background-color: #f1f8ff;
+        .task-table th {
+            background: linear-gradient(to bottom, #f8f9fa, #e9ecef);
             color: #2c3e50;
             font-weight: 600;
+            text-align: left;
+            padding: 15px;
             cursor: pointer;
             position: relative;
-            white-space: nowrap;
+            border-bottom: 2px solid #dee2e6;
         }
         
-        th:hover {
+        .task-table th:hover {
+            background: linear-gradient(to bottom, #e9ecef, #dee2e6);
+        }
+        
+        .task-table th::after {
+            content: "↕";
+            position: absolute;
+            right: 10px;
+            color: #7f8c8d;
+            font-size: 0.8rem;
+        }
+        
+        .task-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            color: #34495e;
+        }
+        
+        .task-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        .task-table tr:hover {
             background-color: #e3f2fd;
         }
         
-        tbody tr:hover {
-            background-color: #f9f9f9;
+        .status-cell {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
         }
         
-        .loading, .error, .no-data {
+        .status-open {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-closed {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .no-results {
             text-align: center;
             padding: 30px;
-            font-size: 18px;
+            color: #7f8c8d;
+            font-style: italic;
+        }
+        
+        .loading, .error {
+            text-align: center;
+            padding: 30px;
+            font-size: 1.2rem;
         }
         
         .loading {
@@ -114,300 +230,271 @@
             color: #e74c3c;
         }
         
-        .update-info {
-            font-size: 14px;
+        footer {
+            text-align: center;
+            padding: 20px;
             color: #7f8c8d;
-            text-align: right;
-            padding: 5px 10px;
-        }
-        
-        .status-open {
-            color: #e67e22;
-            font-weight: 500;
-        }
-        
-        .status-in_progress {
-            color: #3498db;
-            font-weight: 500;
-        }
-        
-        .status-done {
-            color: #27ae60;
-            font-weight: 500;
-        }
-        
-        .null-value {
-            color: #95a5a6;
-            font-style: italic;
-        }
-        
-        @media (max-width: 992px) {
-            table {
-                display: block;
-                overflow-x: auto;
-            }
+            font-size: 0.9rem;
         }
         
         @media (max-width: 768px) {
-            .filters {
+            .controls {
                 flex-direction: column;
+                align-items: stretch;
             }
             
-            .filters input, .filters select {
-                width: 100%;
+            .refresh-controls {
+                justify-content: center;
+            }
+            
+            .task-table {
+                display: block;
+                overflow-x: auto;
             }
         }
     </style>
 </head>
 <body>
-    <div id="root"></div>
-    
+    <div class="container">
+        <header>
+            <h1>Task Management Dashboard</h1>
+            <p>Monitor and manage all system tasks in real-time with auto-refresh and powerful filtering capabilities</p>
+        </header>
+        
+        <div id="root"></div>
+        
+        <footer>
+            <p>Task Management System &copy; 2025 | Auto-refreshes every 5 seconds</p>
+        </footer>
+    </div>
+
     <script type="text/babel">
         const { useState, useEffect, useCallback } = React;
 
         const TaskTable = () => {
-            // Состояния компонента
             const [tasks, setTasks] = useState([]);
             const [filteredTasks, setFilteredTasks] = useState([]);
             const [loading, setLoading] = useState(true);
             const [error, setError] = useState(null);
-            
-            // Состояния для сортировки
-            const [sortField, setSortField] = useState('id');
-            const [sortDirection, setSortDirection] = useState('asc');
-            
-            // Состояния для фильтрации
-            const [filter, setFilter] = useState('');
-            const [filterField, setFilterField] = useState('name');
+            const [sortConfig, setSortConfig] = useState({
+                key: 'id',
+                direction: 'ascending'
+            });
+            const [search, setSearch] = useState({
+                worker_id: '',
+                status: ''
+            });
 
-            // Маппинг статусов
-            const statusMapping = {
-                'open': { text: 'Открыта', className: 'status-open' },
-                'in_progress': { text: 'В процессе', className: 'status-in_progress' },
-                'done': { text: 'Завершена', className: 'status-done' }
-            };
-
-            // Функция загрузки данных
-            const fetchData = useCallback(async () => {
+            // Fetch data from API
+            const fetchTasks = useCallback(async () => {
                 try {
                     const response = await fetch('http://localhost:8080/api/tasks');
-                    
                     if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
+                        throw new Error('Failed to fetch tasks. Server returned ' + response.status);
                     }
-                    
                     const data = await response.json();
                     setTasks(data);
-                    applyFiltersAndSorting(data, filter, filterField, sortField, sortDirection);
+                    setError(null);
                 } catch (err) {
                     setError(err.message);
+                    console.error('Fetch error:', err);
                 } finally {
                     setLoading(false);
                 }
-            }, [filter, filterField, sortField, sortDirection]);
+            }, []);
 
-            // Применение фильтров и сортировки
-            const applyFiltersAndSorting = (data, filterValue, field, sortField, sortDirection) => {
-                // Фильтрация
-                let filtered = data;
-                if (filterValue !== '') {
-                    filtered = data.filter(item => {
-                        let value = item[field];
-                        
-                        // Обработка специальных случаев
-                        if (value === null) {
-                            value = 'null';
-                        } else if (field === 'ts') {
-                            value = new Date(value).toLocaleString();
-                        } else {
-                            value = String(value);
-                        }
-                        
-                        return value.toLowerCase().includes(filterValue.toLowerCase());
-                    });
-                }
-                
-                // Сортировка
-                const sorted = [...filtered].sort((a, b) => {
-                    let valA = a[sortField];
-                    let valB = b[sortField];
-                    
-                    // Обработка специальных полей
-                    if (sortField === 'lines') {
-                        valA = valA === null ? -1 : valA;
-                        valB = valB === null ? -1 : valB;
-                        return sortDirection === 'asc' ? valA - valB : valB - valA;
-                    }
-                    
-                    if (sortField === 'ts') {
-                        valA = new Date(valA).getTime();
-                        valB = new Date(valB).getTime();
-                        return sortDirection === 'asc' ? valA - valB : valB - valA;
-                    }
-                    
-                    if (typeof valA === 'string' && typeof valB === 'string') {
-                        return sortDirection === 'asc' 
-                            ? valA.localeCompare(valB) 
-                            : valB.localeCompare(valA);
-                    }
-                    
-                    return sortDirection === 'asc' 
-                        ? (valA || 0) - (valB || 0) 
-                        : (valB || 0) - (valA || 0);
-                });
-                
-                setFilteredTasks(sorted);
-            };
-
-            // Обработчик сортировки
-            const handleSort = (field) => {
-                const newDirection = sortField === field && sortDirection === 'asc' 
-                    ? 'desc' 
-                    : 'asc';
-                
-                setSortField(field);
-                setSortDirection(newDirection);
-                applyFiltersAndSorting(tasks, filter, filterField, field, newDirection);
-            };
-
-            // Обработчик изменения фильтра
-            const handleFilterChange = (e) => {
-                const value = e.target.value;
-                setFilter(value);
-                applyFiltersAndSorting(tasks, value, filterField, sortField, sortDirection);
-            };
-
-            // Обработчик изменения поля фильтрации
-            const handleFilterFieldChange = (e) => {
-                const field = e.target.value;
-                setFilterField(field);
-                applyFiltersAndSorting(tasks, filter, field, sortField, sortDirection);
-            };
-
-            // Загрузка данных при монтировании и автообновление
+            // Set up auto-refresh and initial fetch
             useEffect(() => {
-                fetchData();
+                fetchTasks();
                 
-                // Автообновление каждые 5 секунд
-                const intervalId = setInterval(fetchData, 5000);
+                const intervalId = setInterval(() => {
+                    fetchTasks();
+                }, 5000);
                 
                 return () => clearInterval(intervalId);
-            }, [fetchData]);
+            }, [fetchTasks]);
 
-            // Отображение индикатора сортировки
-            const getSortIndicator = (field) => {
-                if (sortField !== field) return null;
-                return sortDirection === 'asc' ? ' ↑' : ' ↓';
+            // Apply search filters whenever search criteria or tasks change
+            useEffect(() => {
+                let result = tasks;
+                
+                if (search.worker_id) {
+                    result = result.filter(task => 
+                        task.worker_id && task.worker_id.toString().includes(search.worker_id)
+                    );
+                }
+                
+                if (search.status) {
+                    result = result.filter(task => 
+                        task.status && task.status.toLowerCase().includes(search.status.toLowerCase())
+                    );
+                }
+                
+                setFilteredTasks(result);
+            }, [tasks, search]);
+
+            // Handle sorting
+            const handleSort = (key) => {
+                let direction = 'ascending';
+                
+                if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+                    direction = 'descending';
+                }
+                
+                setSortConfig({ key, direction });
             };
 
-            // Форматирование даты
-            const formatDate = (dateString) => {
-                const date = new Date(dateString);
-                return date.toLocaleString();
-            };
-
-            if (loading) {
-                return <div className="loading">Загрузка данных...</div>;
-            }
-
-            if (error) {
-                return <div className="error">Ошибка: {error}</div>;
-            }
-
-            return (
-                <div className="task-table">
-                    <h2>Управление задачами</h2>
+            // Apply sorting to filtered tasks
+            const sortedTasks = React.useMemo(() => {
+                if (!sortConfig.key) return filteredTasks;
+                
+                return [...filteredTasks].sort((a, b) => {
+                    const aValue = a[sortConfig.key];
+                    const bValue = b[sortConfig.key];
                     
-                    {/* Панель фильтрации */}
-                    <div className="filters">
-                        <select 
-                            value={filterField} 
-                            onChange={handleFilterFieldChange}
-                            aria-label="Выберите поле для фильтрации"
-                        >
-                            <option value="name">Имя файла</option>
-                            <option value="status">Статус</option>
-                            <option value="worker_id">Worker ID</option>
-                            <option value="lines">Количество строк</option>
-                            <option value="ts">Дата изменения</option>
-                            <option value="id">ID</option>
-                        </select>
-                        
-                        <input
-                            type="text"
-                            placeholder={`Фильтр по ${filterField}...`}
-                            value={filter}
-                            onChange={handleFilterChange}
-                            aria-label="Поле фильтрации"
-                        />
-                        
-                        <button onClick={() => fetchData()} className="refresh-btn">
-                            Обновить сейчас
-                        </button>
-                    </div>
+                    // Handle null/undefined values
+                    if (aValue == null) return 1;
+                    if (bValue == null) return -1;
+                    
+                    // Numeric comparison
+                    if (typeof aValue === 'number' && typeof bValue === 'number') {
+                        return sortConfig.direction === 'ascending' 
+                            ? aValue - bValue 
+                            : bValue - aValue;
+                    }
+                    
+                    // String comparison
+                    const stringA = String(aValue).toLowerCase();
+                    const stringB = String(bValue).toLowerCase();
+                    
+                    if (stringA < stringB) {
+                        return sortConfig.direction === 'ascending' ? -1 : 1;
+                    }
+                    if (stringA > stringB) {
+                        return sortConfig.direction === 'ascending' ? 1 : -1;
+                    }
+                    return 0;
+                });
+            }, [filteredTasks, sortConfig]);
 
-                    {/* Таблица */}
-                    <table>
+            // Handle search input changes
+            const handleSearchChange = (e) => {
+                const { name, value } = e.target;
+                setSearch(prev => ({
+                    ...prev,
+                    [name]: value
+                }));
+            };
+
+            // Render status with appropriate styling
+            const renderStatus = (status) => {
+                let statusClass = '';
+                if (status === 'open') statusClass = 'status-open';
+                else if (status === 'pending') statusClass = 'status-pending';
+                else if (status === 'closed') statusClass = 'status-closed';
+                
+                return <span className={`status-cell ${statusClass}`}>{status}</span>;
+            };
+
+            // Render loading, error, or table content
+            const renderContent = () => {
+                if (loading) {
+                    return <div className="loading">Loading tasks...</div>;
+                }
+
+                if (error) {
+                    return <div className="error">Error: {error}</div>;
+                }
+
+                return (
+                    <table className="task-table">
                         <thead>
                             <tr>
-                                <th onClick={() => handleSort('id')}>
-                                    ID{getSortIndicator('id')}
-                                </th>
-                                <th onClick={() => handleSort('name')}>
-                                    Имя файла{getSortIndicator('name')}
-                                </th>
-                                <th onClick={() => handleSort('lines')}>
-                                    Строк{getSortIndicator('lines')}
-                                </th>
-                                <th onClick={() => handleSort('status')}>
-                                    Статус{getSortIndicator('status')}
-                                </th>
-                                <th onClick={() => handleSort('worker_id')}>
-                                    Worker ID{getSortIndicator('worker_id')}
-                                </th>
-                                <th onClick={() => handleSort('ts')}>
-                                    Дата изменения{getSortIndicator('ts')}
-                                </th>
+                                <th onClick={() => handleSort('id')}>ID</th>
+                                <th onClick={() => handleSort('name')}>File Name</th>
+                                <th onClick={() => handleSort('status')}>Status</th>
+                                <th onClick={() => handleSort('ts')}>Timestamp</th>
+                                <th onClick={() => handleSort('fail_count')}>Fail Count</th>
+                                <th onClick={() => handleSort('lines')}>Lines</th>
+                                <th onClick={() => handleSort('worker_id')}>Worker ID</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredTasks.length > 0 ? (
-                                filteredTasks.map(task => (
+                            {sortedTasks.length > 0 ? (
+                                sortedTasks.map(task => (
                                     <tr key={task.id}>
                                         <td>{task.id}</td>
                                         <td>{task.name}</td>
-                                        <td>
-                                            {task.lines === null 
-                                                ? <span className="null-value">—</span> 
-                                                : task.lines}
-                                        </td>
-                                        <td className={statusMapping[task.status]?.className || ''}>
-                                            {statusMapping[task.status]?.text || task.status}
-                                        </td>
-                                        <td>{task.worker_id}</td>
-                                        <td>{formatDate(task.ts)}</td>
+                                        <td>{renderStatus(task.status)}</td>
+                                        <td>{task.ts}</td>
+                                        <td>{task.fail_count}</td>
+                                        <td>{task.lines || 'N/A'}</td>
+                                        <td>{task.worker_id || 'N/A'}</td>
                                     </tr>
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="6" className="no-data">
-                                        {filter ? 'Задачи не найдены' : 'Нет доступных задач'}
+                                    <td colSpan="7" className="no-results">
+                                        No tasks found matching your criteria
                                     </td>
                                 </tr>
                             )}
                         </tbody>
                     </table>
-                    
-                    <div className="update-info">
-                        Данные обновляются автоматически каждые 5 секунд | Всего задач: {filteredTasks.length}
+                );
+            };
+
+            return (
+                <div className="dashboard">
+                    <div className="controls">
+                        <div className="search-group">
+                            <label>Search by Worker ID</label>
+                            <input
+                                type="text"
+                                name="worker_id"
+                                value={search.worker_id}
+                                onChange={handleSearchChange}
+                                placeholder="Enter worker ID"
+                            />
+                        </div>
+                        
+                        <div className="search-group">
+                            <label>Search by Status</label>
+                            <input
+                                type="text"
+                                name="status"
+                                value={search.status}
+                                onChange={handleSearchChange}
+                                placeholder="e.g. open, pending"
+                            />
+                        </div>
+                        
+                        <div className="refresh-controls">
+                            <button className="refresh-btn" onClick={fetchTasks}>
+                                Refresh Now
+                            </button>
+                            <div className="refresh-indicator">
+                                <span className="indicator-dot"></span>
+                                Auto-refresh every 5 seconds
+                            </div>
+                        </div>
                     </div>
+                    
+                    {renderContent()}
                 </div>
             );
         };
 
-        // Рендеринг приложения
+        const App = () => {
+            return (
+                <div>
+                    <TaskTable />
+                </div>
+            );
+        };
+
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<TaskTable />);
+        root.render(<App />);
     </script>
 </body>
 </html>

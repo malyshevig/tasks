@@ -1,87 +1,61 @@
-from distutils.util import execute
-from shlex import quote
-
-import psycopg2
-from psycopg2 import pool
+import logging
 
 from . local_types import Task
+from local_util.dbutil import DbUtil
 
 host = "localhost"
 port = 5432
-dbname = "report"
 user = "postgres"
 password = "begemot"
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
 def row2task(row):
     return Task(id=row[0], name=row[1], status=row[2], worker_id=row[3], ts=row[4], lines=row[5],
                fail_count=row[6]) if row else None
 
 
-class DbUtil:
+class Db(DbUtil):
+    instance = None
+
+    @staticmethod
+    def get_instance():
+        if Db.instance is None:
+            Db.instance = Db()
+
+        return Db.instance
+
+
     def __init__(self):
-        self. pool = psycopg2.pool.SimpleConnectionPool(
-                minconn=1,  # Минимальное количество соединений
-                maxconn=5,   # Максимальное количество соединений
-                host = host, port = port, dbname=dbname, user = user, password=password
-            )
-
-    def query_template(self, callback):
-        cur = None
-        conn = None
-
-        try:
-            conn = self.pool.getconn()
-            if not conn:
-                raise Exception("Cant get connection")
-
-            cur = conn.cursor()
-            r = callback(conn, cur)
-
-            return r
-        finally:
-            if conn:
-                if cur:
-                    cur.close()
-                self.pool.putconn(conn)
-
-    def execute_query_update(self, query) -> int:
-        print ("Execute query update: ", query)
-        def call (conn, cur):
-            cur.execute(query)
-            c = cur.rowcount
-            conn.commit()
-            return c
-
-        return self.query_template (call)
-
-    def execute_query_select (self, query, limit=1):
-        print("Execute query select: ", query)
-        def call (_, cur):
-            cur.execute(query)
-            data = cur.fetchall ()
-            return data[:limit] if limit else data
-
-        return self.query_template(call)
+        super().__init__("report")
 
     def update_outdated_tasks(self)-> int:
         c = 0
-        q1 = "update task set status='open', fail_count = fail_count+1 "
+        q1 = "update task set status='open', fail_count = fail_count+1, ts = now() "
         q1+= "where status = 'in_progress' "
-        q1+= "and ts <= (NOW() - INTERVAL '10 SECONDS') "
+        q1+= "and ts <= (NOW() - INTERVAL '20 SECONDS') "
         q1+= "and fail_count<2;"
         c = c + self.execute_query_update (q1)
 
-        q2 = "update task set status='failed', fail_count = fail_count+1 "
+        q2 = "update task set status='failed', fail_count = fail_count+1, ts = now() "
         q2+= "where status = 'in_progress' "
-        q2+= "and ts <= (NOW() - INTERVAL '10 SECONDS') "
+        q2+= "and ts <= (NOW() - INTERVAL '20 SECONDS') "
         q2+= "and fail_count>=2;"
 
         c = c + self.execute_query_update (q2)
+        logging.info(f"Updated {c} tasks")
         return c
 
     def update_task_status(self, task: Task):
-        q_update = f"update task set status = '{task.status}', lines= {task.lines}, ts = now() where id = {task.id};"
+        q = f"select * from task where task.id = {task.id};"
+        r = self.execute_query_select(q, 1)
+        if len(r) == 0:
+            return 0
+
+        t:Task = row2task(r[0])
+
+        q_update =  f"update task set status = '{task.status}', lines= {task.lines}, ts = now() where id = {task.id}"
+        q_update += f" and status = '{t.status}'"
 
         return self.execute_query_update (q_update)
 
@@ -98,7 +72,7 @@ class DbUtil:
             return None
 
     def get_tasks(self) -> list:
-        q = "select id, name, status, worker_id, ts,lines,fail_count from task;"
+        q = "select id, name, status, worker_id, ts,lines,fail_count from task order by id limit 1000;"
         r = self.execute_query_select (q, limit=None)
 
         return  [row2task(row) for row in r]
@@ -132,19 +106,16 @@ class DbUtil:
                 if count == 1:
                     return self.get_task(task.id)
                 else:
-                    print("Collision detected. Repeat")
+                    logging.info("Collision detected. Repeat")
 
-    def add_task(self, name) -> Task:
+    def add_tasks(self, names:[]) -> Task:
         def call(conn, cur):
-            cur.execute(f"insert into task (name, status, ts, fail_count) values ('{name}','open', now(), 0) RETURNING id;")
-            task_id = cur.fetchone()[0]
+            for name in names:
+                cur.execute(f"insert into task (name, status, ts, fail_count) values ('{name}','open', now(), 0) RETURNING id;")
+
             conn.commit()
-            return task_id
 
-        task_id = self.query_template(call)
-        return self.get_task(task_id)
+        self.query_template(call)
 
 
-if __name__ == '__main__':
-    db_util = DbUtil()
-    r=db_util.lock_task()
+

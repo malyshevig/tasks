@@ -1,21 +1,20 @@
 import json
 
 import requests
+from random import randint
 
 from dispatch.local_types import Task
 
 
-def add_task():
+def add_task(n:int):
     url = "http://127.0.0.1:5000/api/task"
-    response = requests.post(url, json=json.dumps({"name": "1.txt"}), timeout=5)
+    task_list = [{"name": f"file_{randint(0,255)}.txt"} for _ in range(n)]
+    json_s = json.dumps(task_list)
+
+    response = requests.post(url, json=json_s)
     response.raise_for_status()  # Проверка на ошибки (4xx/5xx)
 
-    data = response.json()
-    task = Task(id=data['id'], name=data['name'], status=data['status'], ts=data['ts'], lines=data['lines'],
-                worker_id=data['worker_id'])
-    print(f"Added response: {response} task: {task}")
-
+    print(f"Added response: {response}")
 
 if __name__ == "__main__":
-    for x in range(1000):
-        add_task()
+        add_task(100000)
