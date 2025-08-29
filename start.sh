@@ -1,5 +1,5 @@
 alias python=/Users/im/imavito/report/.venv/bin/python
-num_workers=50
+num_workers=30
 
 python -m dispatch.dispatcher -p 5000 >./logs/dispatcher0.log 2>&1 &
 python -m dispatch.dispatcher -p 5001 >./logs/dispatcher1.log 2>&1 &
