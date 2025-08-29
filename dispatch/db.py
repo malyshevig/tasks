@@ -32,9 +32,9 @@ class Db(DbUtil):
     def update_outdated_tasks(self)-> int:
         c = 0
         q1 = "update task set status='open', fail_count = fail_count+1, ts = now() "
-        q1+= "where status = 'in_progress' "
-        q1+= "and ts <= (NOW() - INTERVAL '20 SECONDS') "
-        q1+= "and fail_count<2;"
+        q1 += "where status = 'in_progress' "
+        q1 += "and ts <= (NOW() - INTERVAL '20 SECONDS') "
+        q1 += "and fail_count<2;"
         c = c + self.execute_query_update (q1)
 
         q2 = "update task set status='failed', fail_count = fail_count+1, ts = now() "
@@ -72,7 +72,8 @@ class Db(DbUtil):
             return None
 
     def get_tasks(self) -> list:
-        q = "select id, name, status, worker_id, ts,lines,fail_count from task order by id limit 1000;"
+        q = "select id, name, status, worker_id, ts,lines,fail_count from task "
+        q += "where status != 'done' order by id limit 1000;"
         r = self.execute_query_select (q, limit=None)
 
         return  [row2task(row) for row in r]
