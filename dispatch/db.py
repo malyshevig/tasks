@@ -85,6 +85,7 @@ class Db(DbUtil):
 
         return row2task(r[0]) if len(r) > 0 else None
 
+
     def lock_task(self, worker_id) -> Task:
         assert worker_id is not None, f"Unexpected parameter value worker_id: {worker_id}"
 
@@ -107,6 +108,18 @@ class Db(DbUtil):
                     return self.get_task(task.id)
                 else:
                     logging.info("Collision detected. Repeat")
+
+    def lock_task2(self, worker_id) -> Task:
+        assert worker_id is not None, f"Unexpected parameter value worker_id: {worker_id}"
+
+        q = f"""update task set status = 'in_progress',worker_id = '{worker_id}', lines = 0, ts= now()
+                where status = 'open'
+                and id = (select id from task where status = 'open' order by id limit 1 for update skip locked)
+                returning id, name, status, worker_id, ts, lines, fail_count;
+                """
+
+        r = self.execute_query_update_and_select(q, limit=1)
+        return row2task(r[0]) if len(r) > 0 else None
 
     def add_tasks(self, names:[]) -> Task:
         def call(conn, cur):

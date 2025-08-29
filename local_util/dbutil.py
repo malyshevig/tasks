@@ -67,6 +67,19 @@ class DbUtil:
 
         return self.query_template(call)
 
+    def execute_query_update_and_select(self, query, limit=1):
+
+        logging.debug(f"Execute query select: {query}")
+
+        def call(con, cur):
+            cur.execute(query)
+            data = cur.fetchall()
+            if con:
+                con.commit()
+            return data[:limit] if limit else data
+
+        return self.query_template(call)
+
     def update_outdated_tasks(self)-> int:
         c = 0
         q1 = "update task set status='open', fail_count = fail_count+1 "
