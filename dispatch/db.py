@@ -14,7 +14,6 @@ def row2task(row):
     return Task(id=row[0], name=row[1], status=row[2], worker_id=row[3], ts=row[4],
                 lines=row[5], fail_count=row[6]) if row else None
 
-
 class Db(DbUtil):
     instance = None
 
