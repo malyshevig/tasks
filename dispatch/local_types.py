@@ -14,5 +14,6 @@ class Task:
     ts: Optional[datetime] = field(default=None)
     lines: Optional[int] = field(default=0)
     fail_count: Optional[int] = field(default=0)
+    priority: Optional[int] = field(default=0)
 
 

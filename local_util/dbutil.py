@@ -11,24 +11,29 @@ port = 5432
 user = "postgres"
 password = "begemot"
 
+
 class DbUtil:
     def __init__(self, dbname:str):
         self.dbname = dbname
 
-        print (f"init db util {dbname} ")
-
-        self. pool = psycopg2.pool.SimpleConnectionPool(
-                minconn=10,  # Минимальное количество соединений
-                maxconn=10,   # Максимальное количество соединений
-                host = host, port = port, dbname=self.dbname, user = user, password=password
+        self. pool = psycopg2.pool.ThreadedConnectionPool(
+            minconn=5,  # Минимальное количество соединений
+            maxconn=5,   # Максимальное количество соединений
+            host = host, port = port, dbname=self.dbname, user = user, password=password
             )
 
     def __del__(self):
         if self.pool:
             self.pool.closeall()
 
+    def get_connections_info(self):
+        pool = self.pool
+        return pool.maxconn
+
+
     def query_template(self, callback):
         cur = None
+
 
         with self.pool.getconn() as conn:
             logging.info(f"get connection {conn} {th.current_thread()}")

@@ -17,7 +17,7 @@ class RestUnstable:
         else:
             self.error_probability = 0
 
-    def get(self, url, timeout=5):
+    def get(self, url, timeout=30):
         if self.error_probability > 0:
             if random() < self.error_probability:
                 time.sleep(2)
@@ -93,7 +93,7 @@ def update_task_status(task: Task, tries=3) -> bool:
 def process_task(task):
     logging.info(f"Processing task {task}")
     try:
-        for l in range(1001):
+        for l in range(101):
             task.lines = l
             if l % 10 == 0:
                 if not update_task_status(task):

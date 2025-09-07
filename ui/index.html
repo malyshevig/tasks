@@ -1,500 +1,752 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task Management Dashboard</title>
+    <title>React Task Manager</title>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        body {
+            background-color: #f8f9fa;
+            padding: 20px;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        
-        body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-        
-        .container {
-            max-width: 1400px;
+        .app-container {
+            max-width: 1700px;
             margin: 0 auto;
         }
-        
-        header {
-            text-align: center;
-            padding: 30px 0;
-            color: #2c3e50;
-        }
-        
-        header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            background: linear-gradient(90deg, #3498db, #2c3e50);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
-        
-        header p {
-            color: #7f8c8d;
-            font-size: 1.1rem;
-            max-width: 700px;
-            margin: 0 auto;
-            line-height: 1.6;
-        }
-        
-        .dashboard {
-            background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            padding: 25px;
-            margin-bottom: 30px;
-        }
-        
-        .controls {
+        .header {
             display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            margin-bottom: 25px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #eee;
-            align-items: flex-end;
-        }
-        
-        .search-group {
-            flex: 1;
-            min-width: 250px;
-        }
-        
-        .search-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: #2c3e50;
-            font-weight: 500;
-        }
-        
-        .search-group input {
-            width: 100%;
-            padding: 12px 15px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: all 0.3s;
-        }
-        
-        .search-group input:focus {
-            border-color: #3498db;
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
-        }
-        
-        .refresh-controls {
-            display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 15px;
-        }
-        
-        .refresh-btn {
-            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 4px 6px rgba(52, 152, 219, 0.2);
-        }
-        
-        .refresh-btn:hover {
-            background: linear-gradient(135deg, #2980b9 0%, #3498db 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 8px rgba(52, 152, 219, 0.3);
-        }
-        
-        .refresh-indicator {
-            display: flex;
-            align-items: center;
-            background-color: #f8f9fa;
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            color: #7f8c8d;
-        }
-        
-        .indicator-dot {
-            width: 10px;
-            height: 10px;
-            background-color: #2ecc71;
-            border-radius: 50%;
-            margin-right: 8px;
-            animation: pulse 1.5s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { opacity: 0.6; }
-            50% { opacity: 1; }
-            100% { opacity: 0.6; }
-        }
-        
-        .task-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        
-        .task-table th {
-            background: linear-gradient(to bottom, #f8f9fa, #e9ecef);
-            color: #2c3e50;
-            font-weight: 600;
-            text-align: left;
+            margin-bottom: 20px;
             padding: 15px;
-            cursor: pointer;
-            position: relative;
-            border-bottom: 2px solid #dee2e6;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
-        
-        .task-table th:hover {
-            background: linear-gradient(to bottom, #e9ecef, #dee2e6);
+        .table-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
         }
-        
-        .task-table th::after {
-            content: "↕";
-            position: absolute;
-            right: 10px;
-            color: #7f8c8d;
-            font-size: 0.8rem;
-        }
-        
-        .task-table td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #eee;
-            color: #34495e;
-        }
-        
-        .task-table tr:nth-child(even) {
-            background-color: #f8f9fa;
-        }
-        
-        .task-table tr:hover {
-            background-color: #e3f2fd;
-        }
-        
-        .status-cell {
-            display: inline-block;
-            padding: 5px 12px;
-            border-radius: 20px;
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 15px;
             font-size: 0.85rem;
             font-weight: 500;
         }
-        
-        .status-open {
+        .priority-badge {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .priority-badge:hover {
+            opacity: 0.8;
+            transform: scale(1.05);
+        }
+        .priority-input {
+            font-size: 0.85rem;
+            padding: 4px 8px;
+            border-radius: 15px;
+            border: 1px solid #dee2e6;
+            background-color: white;
+            width: 70px;
+            text-align: center;
+        }
+        .priority-1 {
             background-color: #d4edda;
             color: #155724;
         }
-        
-        .status-pending {
+        .priority-2 {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .priority-3 {
             background-color: #fff3cd;
             color: #856404;
         }
-        
-        .status-closed {
+        .priority-4 {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .priority-5 {
             background-color: #f8d7da;
             color: #721c24;
         }
-        
-        .no-results {
-            text-align: center;
-            padding: 30px;
-            color: #7f8c8d;
-            font-style: italic;
+        .status-paused {
+            background-color: #fff3cd;
+            color: #856404;
         }
-        
-        .loading, .error {
-            text-align: center;
-            padding: 30px;
-            font-size: 1.2rem;
+        .status-failed {
+            background-color: #f8d7da;
+            color: #721c24;
         }
-        
+        .status-running {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-completed {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        .status-open {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        .status-in_progress {
+            background-color: #cce7ff;
+            color: #004085;
+        }
         .loading {
-            color: #3498db;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 300px;
         }
-        
-        .error {
-            color: #e74c3c;
-        }
-        
-        footer {
+        .error-message {
+            color: #dc3545;
             text-align: center;
             padding: 20px;
-            color: #7f8c8d;
+        }
+        .filter-input {
+            width: 100%;
+            padding: 5px 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
             font-size: 0.9rem;
         }
-        
-        @media (max-width: 768px) {
-            .controls {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            .refresh-controls {
-                justify-content: center;
-            }
-            
-            .task-table {
-                display: block;
-                overflow-x: auto;
-            }
+        .table th {
+            cursor: pointer;
+            position: relative;
+            user-select: none;
+        }
+        .table th:hover {
+            background-color: #f1f1f1;
+        }
+        .sort-icon {
+            margin-left: 5px;
+            font-size: 0.8rem;
+            opacity: 0.6;
+        }
+        .refresh-info {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-right: 15px;
+        }
+        .auto-refresh-toggle {
+            margin-right: 15px;
+        }
+        .action-btn {
+            font-size: 0.8rem;
+            padding: 4px 8px;
+            min-width: 70px;
+        }
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1050;
+        }
+        .editing-priority {
+            position: relative;
+        }
+        .priority-spinner {
+            position: absolute;
+            right: -25px;
+            top: 50%;
+            transform: translateY(-50%);
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Task Management Dashboard</h1>
-            <p>Monitor and manage all system tasks in real-time with auto-refresh and powerful filtering capabilities</p>
-        </header>
-        
-        <div id="root"></div>
-        
-        <footer>
-            <p>Task Management System &copy; 2025 | Auto-refreshes every 5 seconds</p>
-        </footer>
-    </div>
+    <div id="root"></div>
+    <div id="toast-container" class="toast-container"></div>
 
     <script type="text/babel">
         const { useState, useEffect, useCallback } = React;
 
-        const TaskTable = () => {
+        // Компонент для уведомлений
+        const Toast = ({ message, type = 'info', onClose }) => {
+            useEffect(() => {
+                const timer = setTimeout(() => {
+                    onClose();
+                }, 3000);
+                return () => clearTimeout(timer);
+            }, [onClose]);
+
+            return (
+                <div className={`toast show align-items-center text-bg-${type} border-0`} role="alert">
+                    <div className="d-flex">
+                        <div className="toast-body">
+                            {message}
+                        </div>
+                        <button type="button" className="btn-close btn-close-white me-2 m-auto" onClick={onClose}></button>
+                    </div>
+                </div>
+            );
+        };
+
+        // Основной компонент приложения
+        const TaskManager = () => {
             const [tasks, setTasks] = useState([]);
-            const [filteredTasks, setFilteredTasks] = useState([]);
             const [loading, setLoading] = useState(true);
             const [error, setError] = useState(null);
-            const [sortConfig, setSortConfig] = useState({
-                key: 'id',
-                direction: 'ascending'
-            });
-            const [search, setSearch] = useState({
+            const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+            const [filters, setFilters] = useState({
+                id: '',
+                name: '',
+                status: '',
+                lines: '',
+                fail_count: '',
                 worker_id: '',
-                status: ''
+                ts: '',
+                priority: ''
             });
+            const [autoRefresh, setAutoRefresh] = useState(true);
+            const [actionLoading, setActionLoading] = useState({});
+            const [priorityLoading, setPriorityLoading] = useState({});
+            const [editingPriority, setEditingPriority] = useState(null);
+            const [toasts, setToasts] = useState([]);
 
-            // Fetch data from API
-            const fetchTasks = useCallback(async () => {
+            // Функция для добавления уведомления
+            const addToast = (message, type = 'info') => {
+                const id = Date.now();
+                setToasts(prev => [...prev, { id, message, type }]);
+            };
+
+            // Функция для удаления уведомления
+            const removeToast = (id) => {
+                setToasts(prev => prev.filter(toast => toast.id !== id));
+            };
+
+            // Функция загрузки задач
+            const loadTasks = useCallback(async () => {
                 try {
+                    setLoading(true);
+                    setError(null);
+                    
                     const response = await fetch('http://localhost:8080/api/tasks');
+                    
                     if (!response.ok) {
-                        throw new Error('Failed to fetch tasks. Server returned ' + response.status);
+                        throw new Error(`HTTP error! Status: ${response.status}`);
                     }
+                    
                     const data = await response.json();
                     setTasks(data);
-                    setError(null);
                 } catch (err) {
-                    setError(err.message);
-                    console.error('Fetch error:', err);
+                    setError('Ошибка загрузки данных. Пожалуйста, проверьте подключение к серверу.');
+                    console.error('Ошибка при загрузке данных:', err);
                 } finally {
                     setLoading(false);
                 }
             }, []);
 
-            // Set up auto-refresh and initial fetch
+            // Функция для выполнения действий (Pause/Resume)
+            const handleAction = useCallback(async (task, action) => {
+                setActionLoading(prev => ({ ...prev, [task.id]: true }));
+                
+                try {
+                    const url = `http://localhost:8080/api/task/${task.id}/${action}`;
+                    
+                    const response = await fetch(url, { 
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    
+                    const updatedTask = await response.json();
+                    
+                    // Обновляем задачу в состоянии
+                    setTasks(prevTasks => 
+                        prevTasks.map(t => 
+                            t.id === task.id ? updatedTask : t
+                        )
+                    );
+                    
+                    // Показываем уведомление об успехе
+                    addToast(`Задача ${task.name} ${action === 'pause' ? 'приостановлена' : 'возобновлена'}`, 'success');
+                    
+                } catch (err) {
+                    console.error(`Ошибка при выполнении действия ${action} для задачи ${task.id}:`, err);
+                    addToast(`Ошибка при выполнении действия: ${err.message}`, 'danger');
+                } finally {
+                    setActionLoading(prev => ({ ...prev, [task.id]: false }));
+                }
+            }, []);
+
+            // Функция для изменения приоритета
+            const handlePriorityChange = useCallback(async (taskId, newPriority) => {
+                // Валидация: проверяем, что значение является положительным целым числом
+                const priorityValue = parseInt(newPriority);
+                if (isNaN(priorityValue) || priorityValue < 1) {
+                    addToast('Приоритет должен быть положительным целым числом', 'warning');
+                    return;
+                }
+
+                setPriorityLoading(prev => ({ ...prev, [taskId]: true }));
+                setEditingPriority(null);
+                
+                try {
+                    const url = `http://localhost:8080/api/task/${taskId}/priority/${priorityValue}`;
+                    
+                    const response = await fetch(url, { 
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    
+                    const updatedTask = await response.json();
+                    
+                    // Обновляем задачу в состоянии
+                    setTasks(prevTasks => 
+                        prevTasks.map(t => 
+                            t.id === taskId ? updatedTask : t
+                        )
+                    );
+                    
+                    // Показываем уведомление об успехе
+                    addToast(`Приоритет задачи обновлен на ${priorityValue}`, 'success');
+                    
+                } catch (err) {
+                    console.error(`Ошибка при изменении приоритета для задачи ${taskId}:`, err);
+                    addToast(`Ошибка при изменении приоритета: ${err.message}`, 'danger');
+                } finally {
+                    setPriorityLoading(prev => ({ ...prev, [taskId]: false }));
+                }
+            }, []);
+
+            // Загрузка данных при монтировании компонента
             useEffect(() => {
-                fetchTasks();
-                
-                const intervalId = setInterval(() => {
-                    fetchTasks();
-                }, 5000);
-                
+                loadTasks();
+            }, [loadTasks]);
+
+            // Настройка автоматического обновления
+            useEffect(() => {
+                let intervalId;
+                if (autoRefresh) {
+                    intervalId = setInterval(loadTasks, 9000);
+                }
                 return () => clearInterval(intervalId);
-            }, [fetchTasks]);
+            }, [autoRefresh, loadTasks]);
 
-            // Apply search filters whenever search criteria or tasks change
-            useEffect(() => {
-                let result = tasks;
-                
-                if (search.worker_id) {
-                    result = result.filter(task => 
-                        task.worker_id && task.worker_id.toString().includes(search.worker_id)
-                    );
-                }
-                
-                if (search.status) {
-                    result = result.filter(task => 
-                        task.status && task.status.toLowerCase().includes(search.status.toLowerCase())
-                    );
-                }
-                
-                setFilteredTasks(result);
-            }, [tasks, search]);
-
-            // Handle sorting
+            // Функция для обработки сортировки
             const handleSort = (key) => {
-                let direction = 'ascending';
-                
-                if (sortConfig.key === key && sortConfig.direction === 'ascending') {
-                    direction = 'descending';
+                let direction = 'asc';
+                if (sortConfig.key === key && sortConfig.direction === 'asc') {
+                    direction = 'desc';
                 }
-                
                 setSortConfig({ key, direction });
             };
 
-            // Apply sorting to filtered tasks
-            const sortedTasks = React.useMemo(() => {
-                if (!sortConfig.key) return filteredTasks;
-                
-                return [...filteredTasks].sort((a, b) => {
-                    const aValue = a[sortConfig.key];
-                    const bValue = b[sortConfig.key];
-                    
-                    // Handle null/undefined values
-                    if (aValue == null) return 1;
-                    if (bValue == null) return -1;
-                    
-                    // Numeric comparison
-                    if (typeof aValue === 'number' && typeof bValue === 'number') {
-                        return sortConfig.direction === 'ascending' 
-                            ? aValue - bValue 
-                            : bValue - aValue;
-                    }
-                    
-                    // String comparison
-                    const stringA = String(aValue).toLowerCase();
-                    const stringB = String(bValue).toLowerCase();
-                    
-                    if (stringA < stringB) {
-                        return sortConfig.direction === 'ascending' ? -1 : 1;
-                    }
-                    if (stringA > stringB) {
-                        return sortConfig.direction === 'ascending' ? 1 : -1;
-                    }
-                    return 0;
-                });
-            }, [filteredTasks, sortConfig]);
-
-            // Handle search input changes
-            const handleSearchChange = (e) => {
-                const { name, value } = e.target;
-                setSearch(prev => ({
+            // Функция для обработки изменений в фильтрах
+            const handleFilterChange = (key, value) => {
+                setFilters(prev => ({
                     ...prev,
-                    [name]: value
+                    [key]: value
                 }));
             };
 
-            // Render status with appropriate styling
-            const renderStatus = (status) => {
-                let statusClass = '';
-                if (status === 'open') statusClass = 'status-open';
-                else if (status === 'pending') statusClass = 'status-pending';
-                else if (status === 'closed') statusClass = 'status-closed';
+            // Функция для применения фильтров и сортировки
+            const processData = () => {
+                let processedTasks = [...tasks];
                 
-                return <span className={`status-cell ${statusClass}`}>{status}</span>;
+                // Применяем фильтры
+                Object.entries(filters).forEach(([key, value]) => {
+                    if (value) {
+                        processedTasks = processedTasks.filter(task => 
+                            String(task[key]).toLowerCase().includes(value.toLowerCase())
+                        );
+                    }
+                });
+                
+                // Применяем сортировку
+                if (sortConfig.key) {
+                    processedTasks.sort((a, b) => {
+                        if (a[sortConfig.key] < b[sortConfig.key]) {
+                            return sortConfig.direction === 'asc' ? -1 : 1;
+                        }
+                        if (a[sortConfig.key] > b[sortConfig.key]) {
+                            return sortConfig.direction === 'asc' ? 1 : -1;
+                        }
+                        return 0;
+                    });
+                }
+                
+                return processedTasks;
             };
 
-            // Render loading, error, or table content
-            const renderContent = () => {
-                if (loading) {
-                    return <div className="loading">Loading tasks...</div>;
-                }
+            const processedTasks = processData();
 
-                if (error) {
-                    return <div className="error">Error: {error}</div>;
-                }
+            // Функция для отображения значка сортировки
+            const renderSortIcon = (key) => {
+                if (sortConfig.key !== key) return null;
+                return sortConfig.direction === 'asc' 
+                    ? <i className="bi bi-arrow-up-short"></i> 
+                    : <i className="bi bi-arrow-down-short"></i>;
+            };
 
-                return (
-                    <table className="task-table">
-                        <thead>
-                            <tr>
-                                <th onClick={() => handleSort('id')}>ID</th>
-                                <th onClick={() => handleSort('name')}>File Name</th>
-                                <th onClick={() => handleSort('status')}>Status</th>
-                                <th onClick={() => handleSort('ts')}>Timestamp</th>
-                                <th onClick={() => handleSort('fail_count')}>Fail Count</th>
-                                <th onClick={() => handleSort('lines')}>Lines</th>
-                                <th onClick={() => handleSort('worker_id')}>Worker ID</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {sortedTasks.length > 0 ? (
-                                sortedTasks.map(task => (
-                                    <tr key={task.id}>
-                                        <td>{task.id}</td>
-                                        <td>{task.name}</td>
-                                        <td>{renderStatus(task.status)}</td>
-                                        <td>{task.ts}</td>
-                                        <td>{task.fail_count}</td>
-                                        <td>{task.lines || 'N/A'}</td>
-                                        <td>{task.worker_id || 'N/A'}</td>
-                                    </tr>
-                                ))
+            // Функция для форматирования даты
+            const formatDate = (dateString) => {
+                const date = new Date(dateString);
+                return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+            };
+
+            // Функция для получения класса статуса
+            const getStatusClass = (status) => {
+                switch(status) {
+                    case 'paused': return 'status-paused';
+                    case 'failed': return 'status-failed';
+                    case 'running': return 'status-running';
+                    case 'completed': return 'status-completed';
+                    case 'open': return 'status-open';
+                    case 'in_progress': return 'status-in_progress';
+                    default: return '';
+                }
+            };
+
+            // Функция для получения класса приоритета
+            const getPriorityClass = (priority) => {
+                if (priority >= 5) return 'priority-5';
+                if (priority >= 4) return 'priority-4';
+                if (priority >= 3) return 'priority-3';
+                return `priority-${priority}`;
+            };
+
+            // Функция для отображения кнопки действия в зависимости от статуса
+            const renderActionButton = (task) => {
+                if (task.status === 'in_progress' || task.status === 'open') {
+                    return (
+                        <button
+                            className="btn btn-warning btn-sm action-btn"
+                            onClick={() => handleAction(task, 'pause')}
+                            disabled={actionLoading[task.id]}
+                            title="Приостановить задачу"
+                        >
+                            {actionLoading[task.id] ? (
+                                <span className="spinner-border spinner-border-sm" role="status"></span>
                             ) : (
-                                <tr>
-                                    <td colSpan="7" className="no-results">
-                                        No tasks found matching your criteria
-                                    </td>
-                                </tr>
+                                'Pause'
                             )}
-                        </tbody>
-                    </table>
-                );
+                        </button>
+                    );
+                } else if (task.status === 'paused' || task.status === 'failed') {
+                    return (
+                        <button
+                            className="btn btn-success btn-sm action-btn"
+                            onClick={() => handleAction(task, 'resume')}
+                            disabled={actionLoading[task.id]}
+                            title="Возобновить задачу"
+                        >
+                            {actionLoading[task.id] ? (
+                                <span className="spinner-border spinner-border-sm" role="status"></span>
+                            ) : (
+                                'Resume'
+                            )}
+                        </button>
+                    );
+                }
+                return null;
+            };
+
+            // Функция для отображения элемента приоритета (редактируемого)
+            const renderPriorityElement = (task) => {
+                if (editingPriority === task.id) {
+                    return (
+                        <div className="editing-priority">
+                            <input
+                                type="number"
+                                min="1"
+                                step="1"
+                                className={`priority-input ${getPriorityClass(task.priority)}`}
+                                value={task.priority}
+                                onChange={(e) => {
+                                    // Обновляем значение в реальном времени
+                                    const newValue = parseInt(e.target.value);
+                                    if (!isNaN(newValue) && newValue >= 1) {
+                                        setTasks(prevTasks => 
+                                            prevTasks.map(t => 
+                                                t.id === task.id ? {...t, priority: newValue} : t
+                                            )
+                                        );
+                                    }
+                                }}
+                                onBlur={(e) => {
+                                    const newValue = parseInt(e.target.value);
+                                    if (!isNaN(newValue) && newValue >= 1) {
+                                        handlePriorityChange(task.id, newValue);
+                                    } else {
+                                        // Восстанавливаем предыдущее значение
+                                        setEditingPriority(null);
+                                        loadTasks(); // Перезагружаем данные для восстановления корректного значения
+                                    }
+                                }}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        const newValue = parseInt(e.target.value);
+                                        if (!isNaN(newValue) && newValue >= 1) {
+                                            handlePriorityChange(task.id, newValue);
+                                        } else {
+                                            setEditingPriority(null);
+                                            loadTasks();
+                                        }
+                                    } else if (e.key === 'Escape') {
+                                        setEditingPriority(null);
+                                        loadTasks();
+                                    }
+                                }}
+                                autoFocus
+                            />
+                        </div>
+                    );
+                } else {
+                    return (
+                        <div className="editing-priority">
+                            <span 
+                                className={`priority-badge ${getPriorityClass(task.priority)}`}
+                                onClick={() => setEditingPriority(task.id)}
+                                title="Нажмите для изменения приоритета"
+                            >
+                                {task.priority}
+                            </span>
+                            {priorityLoading[task.id] && (
+                                <span className="priority-spinner">
+                                    <span className="spinner-border spinner-border-sm" role="status"></span>
+                                </span>
+                            )}
+                        </div>
+                    );
+                }
             };
 
             return (
-                <div className="dashboard">
-                    <div className="controls">
-                        <div className="search-group">
-                            <label>Search by Worker ID</label>
-                            <input
-                                type="text"
-                                name="worker_id"
-                                value={search.worker_id}
-                                onChange={handleSearchChange}
-                                placeholder="Enter worker ID"
-                            />
-                        </div>
-                        
-                        <div className="search-group">
-                            <label>Search by Status</label>
-                            <input
-                                type="text"
-                                name="status"
-                                value={search.status}
-                                onChange={handleSearchChange}
-                                placeholder="e.g. open, pending"
-                            />
-                        </div>
-                        
-                        <div className="refresh-controls">
-                            <button className="refresh-btn" onClick={fetchTasks}>
-                                Refresh Now
-                            </button>
-                            <div className="refresh-indicator">
-                                <span className="indicator-dot"></span>
-                                Auto-refresh every 5 seconds
+                <div className="app-container">
+                    <div className="header">
+                        <h1 className="m-0">Task Manager</h1>
+                        <div className="d-flex align-items-center">
+                            <span className="refresh-info">
+                                Автообновление: {autoRefresh ? 'вкл' : 'выкл'}
+                            </span>
+                            <div className="form-check form-switch auto-refresh-toggle">
+                                <input
+                                    className="form-check-input"
+                                    type="checkbox"
+                                    checked={autoRefresh}
+                                    onChange={() => setAutoRefresh(!autoRefresh)}
+                                    id="autoRefreshToggle"
+                                />
+                                <label className="form-check-label" htmlFor="autoRefreshToggle">
+                                    Автообновление
+                                </label>
                             </div>
+                            <button 
+                                className="btn btn-primary"
+                                onClick={loadTasks}
+                                disabled={loading}
+                            >
+                                <i className="bi bi-arrow-clockwise"></i> 
+                                {loading ? ' Загрузка...' : ' Обновить'}
+                            </button>
                         </div>
                     </div>
                     
-                    {renderContent()}
+                    <div className="table-container">
+                        {error ? (
+                            <div className="error-message">
+                                {error}
+                                <button 
+                                    className="btn btn-sm btn-outline-secondary ms-2"
+                                    onClick={() => setError(null)}
+                                >
+                                    Скрыть
+                                </button>
+                            </div>
+                        ) : loading ? (
+                            <div className="loading">
+                                <div className="spinner-border text-primary" role="status">
+                                    <span className="visually-hidden">Загрузка...</span>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="table-responsive">
+                                <table className="table table-hover table-striped mb-0">
+                                    <thead className="table-light">
+                                        <tr>
+                                            <th onClick={() => handleSort('id')}>
+                                                ID {renderSortIcon('id')}
+                                            </th>
+                                            <th onClick={() => handleSort('name')}>
+                                                Имя файла {renderSortIcon('name')}
+                                            </th>
+                                            <th onClick={() => handleSort('status')}>
+                                                Статус {renderSortIcon('status')}
+                                            </th>
+                                            <th onClick={() => handleSort('priority')}>
+                                                Приоритет {renderSortIcon('priority')}
+                                            </th>
+                                            <th onClick={() => handleSort('lines')}>
+                                                Строки {renderSortIcon('lines')}
+                                            </th>
+                                            <th onClick={() => handleSort('fail_count')}>
+                                                Ошибки {renderSortIcon('fail_count')}
+                                            </th>
+                                            <th onClick={() => handleSort('worker_id')}>
+                                                Worker ID {renderSortIcon('worker_id')}
+                                            </th>
+                                            <th onClick={() => handleSort('ts')}>
+                                                Время {renderSortIcon('ts')}
+                                            </th>
+                                            <th>Действия</th>
+                                        </tr>
+                                        <tr>
+                                            <th>
+                                                <input
+                                                    type="text"
+                                                    className="filter-input"
+                                                    placeholder="Фильтр ID"
+                                                    value={filters.id}
+                                                    onChange={(e) => handleFilterChange('id', e.target.value)}
+                                                />
+                                            </th>
+                                            <th>
+                                                <input
+                                                    type="text"
+                                                    className="filter-input"
+                                                    placeholder="Фильтр имени"
+                                                    value={filters.name}
+                                                    onChange={(e) => handleFilterChange('name', e.target.value)}
+                                                />
+                                            </th>
+                                            <th>
+                                                <input
+                                                    type="text"
+                                                    className="filter-input"
+                                                    placeholder="Фильтр статуса"
+                                                    value={filters.status}
+                                                    onChange={(e) => handleFilterChange('status', e.target.value)}
+                                                />
+                                            </th>
+                                            <th>
+                                                <input
+                                                    type="text"
+                                                    className="filter-input"
+                                                    placeholder="Фильтр приоритета"
+                                                    value={filters.priority}
+                                                    onChange={(e) => handleFilterChange('priority', e.target.value)}
+                                                />
+                                            </th>
+                                            <th>
+                                                <input
+                                                    type="text"
+                                                    className="filter-input"
+                                                    placeholder="Фильтр строк"
+                                                    value={filters.lines}
+                                                    onChange={(e) => handleFilterChange('lines', e.target.value)}
+                                                />
+                                            </th>
+                                            <th>
+                                                <input
+                                                    type="text"
+                                                    className="filter-input"
+                                                    placeholder="Фильтр ошибок"
+                                                    value={filters.fail_count}
+                                                    onChange={(e) => handleFilterChange('fail_count', e.target.value)}
+                                                />
+                                            </th>
+                                            <th>
+                                                <input
+                                                    type="text"
+                                                    className="filter-input"
+                                                    placeholder="Фильтр Worker ID"
+                                                    value={filters.worker_id}
+                                                    onChange={(e) => handleFilterChange('worker_id', e.target.value)}
+                                                />
+                                            </th>
+                                            <th>
+                                                <input
+                                                    type="text"
+                                                    className="filter-input"
+                                                    placeholder="Фильтр времени"
+                                                    value={filters.ts}
+                                                    onChange={(e) => handleFilterChange('ts', e.target.value)}
+                                                />
+                                            </th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {processedTasks.length === 0 ? (
+                                            <tr>
+                                                <td colSpan="9" className="text-center py-4">
+                                                    Нет данных, соответствующих фильтрам
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            processedTasks.map(task => (
+                                                <tr key={task.id}>
+                                                    <td>{task.id}</td>
+                                                    <td>{task.name}</td>
+                                                    <td>
+                                                        <span className={`status-badge ${getStatusClass(task.status)}`}>
+                                                            {task.status}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        {renderPriorityElement(task)}
+                                                    </td>
+                                                    <td>{task.lines}</td>
+                                                    <td>{task.fail_count}</td>
+                                                    <td>{task.worker_id}</td>
+                                                    <td>{formatDate(task.ts)}</td>
+                                                    <td>
+                                                        {renderActionButton(task)}
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Контейнер для уведомлений */}
+                    {ReactDOM.createPortal(
+                        toasts.map(toast => (
+                            <Toast 
+                                key={toast.id} 
+                                message={toast.message} 
+                                type={toast.type} 
+                                onClose={() => removeToast(toast.id)} 
+                            />
+                        )),
+                        document.getElementById('toast-container')
+                    )}
                 </div>
             );
         };
 
-        const App = () => {
-            return (
-                <div>
-                    <TaskTable />
-                </div>
-            );
-        };
-
+        // Рендерим приложение
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        root.render(<TaskManager />);
     </script>
 </body>
 </html>

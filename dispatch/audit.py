@@ -8,7 +8,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 
 def app_cycle():
     db = Db.get_instance()
-    time.sleep(60)    # initial warming of dispatchers and worker
+    time.sleep(120)    # initial warming of dispatchers and worker
     while True:
         c = db.update_outdated_tasks()
         if c > 0:

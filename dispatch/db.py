@@ -1,4 +1,8 @@
 import logging
+import threading
+import time
+
+from prometheus_client import Gauge
 
 from . local_types import Task
 from local_util.dbutil import DbUtil
@@ -12,7 +16,18 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 
 def row2task(row):
     return Task(id=row[0], name=row[1], status=row[2], worker_id=row[3], ts=row[4],
-                lines=row[5], fail_count=row[6]) if row else None
+                lines=row[5], fail_count=row[6], priority=row[7]) if row else None
+
+
+def monitor_pool_metrics(metrics: Gauge):
+    def monitor(_metrics):
+        while True:
+            free_conn = Db.get_instance().get_connections_info()
+            _metrics.labels('pool').set(free_conn)
+            time.sleep(1)
+
+    thread = threading.Thread(target=monitor, args=(metrics,))
+    thread.start()
 
 class Db(DbUtil):
     instance = None
@@ -27,6 +42,7 @@ class Db(DbUtil):
 
     def __init__(self):
         super().__init__("report")
+
 
     def update_outdated_tasks(self)-> int:
         c = 0
@@ -43,7 +59,17 @@ class Db(DbUtil):
 
         c = c + self.execute_query_update (q2)
         logging.info(f"Updated {c} tasks")
+
         return c
+
+    def update_task_pause_resume(self, task_id:int, status:str):
+        self.execute_query_update(f"update task set status = '{status}',  ts = now() where id = {task_id};")
+        q = f"select * from task where task.id = {task_id};"
+        r = self.execute_query_select(q, 1)
+        if len(r) == 0:
+            return 0
+
+        return row2task(r[0])
 
     def update_task_status(self, task: Task):
         q = f"select * from task where task.id = {task.id};"
@@ -58,6 +84,12 @@ class Db(DbUtil):
 
         return self.execute_query_update (q_update)
 
+    def update_task_priority(self, task_id:int, priority:int):
+        q_update =  f"update task set priority = {priority} where id = {task_id}"
+
+        return self.execute_query_update (q_update)
+
+
     def get_task (self, task_id)-> Task:
         q = f"select * from task where task.id = {task_id};"
 
@@ -71,8 +103,8 @@ class Db(DbUtil):
             return None
 
     def get_tasks(self) -> list:
-        q = "select id, name, status, worker_id, ts,lines,fail_count from task "
-        q += "where status != 'done' order by id limit 1000;"
+        q = "select id, name, status, worker_id, ts,lines,fail_count,priority from task "
+        q += "where status != 'done' order by priority desc, status limit 1000;"
         r = self.execute_query_select (q, limit=None)
 
         return  [row2task(row) for row in r]
@@ -89,7 +121,7 @@ class Db(DbUtil):
     def lock_task(self, worker_id) -> Task:
         assert worker_id is not None, f"Unexpected parameter value worker_id: {worker_id}"
 
-        q = f"select * from task where status = 'open' order by id limit 1;"
+        q = f"select * from task where status = 'open' order by priority desc limit 1;"
         while True:
             task: Task
 
@@ -112,19 +144,23 @@ class Db(DbUtil):
     def lock_task2(self, worker_id) -> Task:
         assert worker_id is not None, f"Unexpected parameter value worker_id: {worker_id}"
 
+        ts0= time.time()
         q = f"""update task set status = 'in_progress',worker_id = '{worker_id}', lines = 0, ts= now()
                 where status = 'open'
-                and id = (select id from task where status = 'open' order by id limit 1 for update skip locked)
-                returning id, name, status, worker_id, ts, lines, fail_count;
+                and id = (select id from task where status = 'open' order by priority desc limit 1 for update skip locked)
+                returning id, name, status, worker_id, ts, lines, fail_count, priority;
                 """
 
         r = self.execute_query_update_and_select(q, limit=1)
+        ts1 = time.time()
+        logging.info(f"lock_task2 took {ts1-ts0} sec, worker_id={worker_id}")
         return row2task(r[0]) if len(r) > 0 else None
 
     def add_tasks(self, names:[]) -> Task:
         def call(conn, cur):
             for name in names:
-                cur.execute(f"insert into task (name, status, ts, fail_count) values ('{name}','open', now(), 0) RETURNING id;")
+                cur.execute(f"insert into task (name, status, ts, fail_count,priority) "+
+                            f"values ('{name}','open', now(), 0,0) RETURNING id;")
 
             conn.commit()
 
