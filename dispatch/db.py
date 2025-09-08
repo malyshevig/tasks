@@ -87,8 +87,13 @@ class Db(DbUtil):
     def update_task_priority(self, task_id:int, priority:int):
         q_update =  f"update task set priority = {priority} where id = {task_id}"
 
-        return self.execute_query_update (q_update)
+        self.execute_query_update (q_update)
+        q = f"select * from task where task.id = {task_id};"
+        r = self.execute_query_select(q, 1)
+        if len(r) == 0:
+            return 0
 
+        return row2task(r[0])
 
     def get_task (self, task_id)-> Task:
         q = f"select * from task where task.id = {task_id};"

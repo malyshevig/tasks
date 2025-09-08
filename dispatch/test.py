@@ -7,7 +7,7 @@ from dispatch.local_types import Task
 
 
 def add_task(n:int):
-    url = "http://127.0.0.1:5004/api/task"
+    url = "http://127.0.0.1:8080/api/task"
     task_list = [{"name": f"file_{randint(0,255)}.txt"} for _ in range(n)]
     json_s = json.dumps(task_list)
 
@@ -17,6 +17,9 @@ def add_task(n:int):
     print(f"Added response: {response}")
 
 if __name__ == "__main__":
-     for i in range(100):
-        add_task(100000)
-        print (f"added {i}")
+    pack = 10
+    added = 0
+    for i in range(100):
+        add_task(pack)
+        added += pack
+        print (f"added {added}")

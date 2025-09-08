@@ -242,6 +242,6 @@ if __name__ == '__main__':
 
     monitor_pool_metrics(DB_POOL_SIZE)
 
-    app.run(debug=True, port=port)
+    app.run(debug=True, port=port, use_reloader=False)
 
 
